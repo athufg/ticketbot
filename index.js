@@ -96,7 +96,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       ]);
 
     const row = new ActionRowBuilder().addComponents(menu);
-    await interaction.reply({ content: "✅ Panel sent!", ephemeral: true });
+    await interaction.reply({ content: "✅ Panel sent!", flags: 64 }); // 64 is the flag for ephemeral
     await interaction.channel.send({ embeds: [embed], components: [row] });
   }
 
