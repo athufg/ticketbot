@@ -30,6 +30,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
   ],
   partials: [Partials.Channel],
 });
@@ -38,9 +39,28 @@ const STAFF_ROLE_ID = "1332256090993463306";
 const LOG_CHANNEL_ID = "1343230007253925898";
 const TRANSCRIPT_ROLE_ID = "1332256090993463306";
 const OWNER_ID = "961956566939086858";
+const WELCOME_CHANNEL_ID = "1341022339999207535";
 
 client.once(Events.ClientReady, () => {
   console.log(`Logged in as ${client.user.tag}`);
+});
+
+client.on(Events.GuildMemberAdd, async (member) => {
+  const channel = member.guild.channels.cache.get(WELCOME_CHANNEL_ID);
+  if (!channel) return;
+
+  const embed = new EmbedBuilder()
+    .setColor("Green")
+    .setTitle("👋 Welcome!")
+    .setDescription(`Hey <@${member.id}>! Welcome to **${member.guild.name}**! 🎉`)
+    .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+    .setFooter({
+      text: `We now have ${member.guild.memberCount} members!`,
+      iconURL: member.guild.iconURL({ dynamic: true }),
+    })
+    .setTimestamp();
+
+  channel.send({ embeds: [embed] });
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
