@@ -34,7 +34,6 @@ const client = new Client({
   partials: [Partials.Channel],
 });
 
-const openTickets = new Set();
 const STAFF_ROLE_ID = "1332256090993463306";
 const LOG_CHANNEL_ID = "1343230007253925898";
 const TRANSCRIPT_ROLE_ID = "1332256090993463306";
@@ -96,18 +95,13 @@ client.on(Events.InteractionCreate, async (interaction) => {
       ]);
 
     const row = new ActionRowBuilder().addComponents(menu);
-    await interaction.reply({ content: "✅ Panel sent!", flags: 64 }); // 64 is the flag for ephemeral
+    await interaction.reply({ content: "✅ Panel sent!", flags: 64 });
     await interaction.channel.send({ embeds: [embed], components: [row] });
   }
 
   if (interaction.isStringSelectMenu()) {
     const value = interaction.values[0];
     const user = interaction.user;
-    if (openTickets.has(user.id))
-      return interaction.reply({
-        content: "⛔ You already have an open ticket!",
-        ephemeral: true,
-      });
 
     const labels = {
       da_hood: "Skin(s) you want to buy?",
@@ -216,7 +210,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
       content: `✅ Ticket created: ${ticketChannel}`,
       ephemeral: true,
     });
-    openTickets.add(user.id);
   }
 
   if (interaction.isButton()) {
@@ -230,7 +223,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
       await channel.permissionOverwrites.edit(interaction.user.id, {
         ViewChannel: false,
       });
-      openTickets.delete(interaction.user.id);
       await channel.send(`🔒 ${interaction.user.tag} has closed the ticket.`);
       await interaction.reply({
         content: "🔒 Ticket closed successfully.",
@@ -313,7 +305,6 @@ client.on("messageCreate", async (message) => {
     await message.channel.permissionOverwrites.edit(message.author.id, {
       ViewChannel: false,
     });
-    openTickets.delete(message.author.id);
     await message.channel.send(
       `🔒 ${message.author.tag} has closed the ticket using command.`,
     );
