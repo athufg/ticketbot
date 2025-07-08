@@ -1,10 +1,10 @@
 {
-  "name": "nodejs",
+  "name": "ticketbot",
   "version": "1.0.0",
-  "description": "",
-  "main": "start.js",
+  "description": "A 24/7 Discord ticket bot",
+  "main": "index.js",
   "scripts": {
-    "start": "node start.js"
+    "start": "node index.js"
   },
   "keywords": [],
   "author": "",
