@@ -49,18 +49,19 @@ client.on(Events.GuildMemberAdd, async (member) => {
   const channel = member.guild.channels.cache.get(WELCOME_CHANNEL_ID);
   if (!channel) return;
 
-  const embed = new EmbedBuilder()
-    .setColor("Green")
+  const welcomeEmbed = new EmbedBuilder()
+    .setColor("Blue")
     .setTitle("👋 Welcome!")
-    .setDescription(`Hey <@${member.id}>! Welcome to **${member.guild.name}**! 🎉`)
-    .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
-    .setFooter({
-      text: `We now have ${member.guild.memberCount} members!`,
-      iconURL: member.guild.iconURL({ dynamic: true }),
-    })
+    .setDescription(
+      `**Welcome! ${member} Thank you for joining <:bearexcite:1300001647510032415>**\n\n` +
+      `**Make sure to invite your friends <a:fs_dance:1281706715342966784>**\n\n` +
+      `**To buy or sell your skins go to <#1342421317068001372>**\n\n` +
+      `**Hope you enjoy your stay <:milkheart:1298848334642937931>**`
+    )
+    .setImage("https://cdn.discordapp.com/attachments/1391658230543028315/1391995595409068122/standard_9.gif?ex=686dec6b&is=686c9aeb&hm=c9dd591145f642be0e433dfc8d27e575920c871eec0c34649d1c77346d1d9455&")
     .setTimestamp();
 
-  channel.send({ embeds: [embed] });
+  channel.send({ embeds: [welcomeEmbed] });
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
