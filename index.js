@@ -12,8 +12,10 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  StringSelectMenuBuilder,
   Events,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  AttachmentBuilder,
 } = require("discord.js");
 
 const client = new Client({
@@ -38,47 +40,22 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       const embed = new EmbedBuilder()
         .setTitle(`${isSell ? "📤 Sell" : "🛒 Buy"} Panel`)
-        .setDescription("Select an item below to proceed.")
-        .setColor("#2F3136")
-        .setImage("https://cdn.discordapp.com/attachments/1391658230543028315/1391658281243508746/standard_8.gif")
-        .setFooter({ text: "Please make a selection to create a ticket." });
+        .setDescription("Choose an item from the dropdown below.")
+        .setColor(isSell ? 0xff3c3c : 0x00ffab)
+        .setImage("https://cdn.discordapp.com/attachments/1391658230543028315/1391658281243508746/standard_8.gif");
 
       const menu = new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId(isSell ? "sell_menu" : "buy_menu")
           .setPlaceholder(`Select an item to ${isSell ? "sell" : "buy"}`)
-          .addOptions(
-            {
-              label: `${isSell ? "Sell" : "Buy"} Da Hood`,
-              value: `${isSell ? "sell_da_hood" : "buy_da_hood"}`,
-              emoji: { name: "DaHood", id: "1321934745889669183" },
-            },
-            {
-              label: `${isSell ? "Sell" : "Buy"} Grow a Garden`,
-              value: `${isSell ? "sell_grow_a_garden" : "buy_grow_a_garden"}`,
-              emoji: "🌱",
-            },
-            {
-              label: `${isSell ? "Sell" : "Buy"} Bladeball`,
-              value: `${isSell ? "sell_bladeball" : "buy_bladeball"}`,
-              emoji: { name: "Bladeball", id: "1289341370653479005" },
-            },
-            {
-              label: `${isSell ? "Sell" : "Buy"} Robux`,
-              value: `${isSell ? "sell_robux" : "buy_robux"}`,
-              emoji: { name: "Robux", id: "1328601212123349053" },
-            },
-            {
-              label: `${isSell ? "Sell" : "Buy"} Adopt Me`,
-              value: `${isSell ? "sell_adopt_me" : "buy_adopt_me"}`,
-              emoji: { name: "adoptme", id: "1394233121519439902" },
-            },
-            {
-              label: `${isSell ? "Sell" : "Buy"} Limiteds`,
-              value: `${isSell ? "sell_limiteds" : "buy_limiteds"}`,
-              emoji: { name: "limiteds", id: "1347882355653742612" },
-            }
-          )
+          .addOptions([
+            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Da Hood`).setValue(`${isSell ? "sell" : "buy"}_da_hood`).setEmoji("<:DaHood:1321934745889669183>"),
+            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Grow a Garden`).setValue(`${isSell ? "sell" : "buy"}_grow_a_garden`).setEmoji("<:GAG:1397616856621256896>"),
+            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Bladeball`).setValue(`${isSell ? "sell" : "buy"}_bladeball`).setEmoji("<:Bladeball:1289341370653479005>"),
+            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Robux`).setValue(`${isSell ? "sell" : "buy"}_robux`).setEmoji("<:Robux:1328601212123349053>"),
+            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Adopt Me`).setValue(`${isSell ? "sell" : "buy"}_adopt_me`).setEmoji("<:adoptme:1394233121519439902>"),
+            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Limiteds`).setValue(`${isSell ? "sell" : "buy"}_limiteds`).setEmoji("<:limiteds:1347882355653742612>")
+          ])
       );
 
       await interaction.reply({ content: "✅ Panel sent!", ephemeral: true });
@@ -86,6 +63,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
 
+  // Handle dropdown selection
   if (interaction.isStringSelectMenu()) {
     const [action, ...itemParts] = interaction.values[0].split("_");
     const itemName = itemParts.join(" ");
@@ -121,6 +99,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.showModal(modal);
   }
 
+  // Handle modal submission
   if (interaction.isModalSubmit()) {
     const [action] = interaction.customId.split("_");
     const item = interaction.fields.getTextInputValue("item");
@@ -152,7 +131,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const embed = new EmbedBuilder()
       .setTitle(`🎫 New ${action.toUpperCase()} Ticket`)
       .setDescription(`**Item(s):** ${item}\n**Payment Method:** ${payment}\n**Roblox Username:** ${username}`)
-      .setColor(action === "buy" ? "Green" : "Red")
+      .setColor(action === "buy" ? 0x00ffab : 0xff3c3c)
       .setFooter({ text: `User: ${user.tag}`, iconURL: user.displayAvatarURL() });
 
     const buttons = new ActionRowBuilder().addComponents(
@@ -171,6 +150,34 @@ client.on(Events.InteractionCreate, async (interaction) => {
       content: `✅ Ticket created: ${ticketChannel}`,
       ephemeral: true,
     });
+  }
+
+  // Handle button functions
+  if (interaction.isButton()) {
+    const { customId } = interaction;
+    const channel = interaction.channel;
+
+    if (customId === "close_ticket") {
+      await channel.permissionOverwrites.edit(interaction.user.id, { SendMessages: false });
+      await interaction.reply({ content: "🔒 Ticket closed.", ephemeral: true });
+    }
+
+    if (customId === "delete_ticket") {
+      await interaction.reply({ content: "🗑️ Ticket will be deleted in 5 seconds.", ephemeral: true });
+      setTimeout(() => channel.delete(), 5000);
+    }
+
+    if (customId === "transcript_ticket") {
+      const messages = await channel.messages.fetch({ limit: 100 });
+      const transcript = messages.reverse().map(m => `${m.author.tag}: ${m.content}`).join("\n");
+      const file = new AttachmentBuilder(Buffer.from(transcript), { name: `transcript-${channel.name}.txt` });
+
+      await interaction.reply({
+        content: "📄 Transcript saved.",
+        files: [file],
+        ephemeral: true
+      });
+    }
   }
 });
 
