@@ -6,13 +6,14 @@ const {
   ChannelType,
   PermissionsBitField,
   EmbedBuilder,
-  ButtonBuilder,
-  ButtonStyle,
   ActionRowBuilder,
+  StringSelectMenuBuilder,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
   Events,
+  ButtonBuilder,
+  ButtonStyle,
 } = require("discord.js");
 
 const client = new Client({
@@ -24,36 +25,41 @@ const client = new Client({
   partials: [Partials.Channel],
 });
 
-const STAFF_ROLE_ID = "YOUR_STAFF_ROLE_ID"; // replace with your actual staff role ID
+const STAFF_ROLE_ID = "1332256090993463306"; // replace with your actual staff role ID
 
 client.once(Events.ClientReady, () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-// Handle slash commands
 client.on(Events.InteractionCreate, async (interaction) => {
+  // Slash Command Handler
   if (interaction.isChatInputCommand()) {
     if (interaction.commandName === "sendpanel" || interaction.commandName === "sendpanel2") {
       const isSell = interaction.commandName === "sendpanel2";
 
       const embed = new EmbedBuilder()
         .setTitle(`${isSell ? "📤 Sell" : "🛒 Buy"} Panel`)
-        .setDescription("Choose an item from the dropdown below.")
+        .setDescription("Select a game from the dropdown below to open a ticket.")
         .setColor(isSell ? "Red" : "Green");
 
       const menu = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(isSell ? "sell_da_hood" : "buy_da_hood")
-          .setLabel(`${isSell ? "Sell" : "Buy"} Da Hood`)
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId(isSell ? "sell_grow_a_garden" : "buy_grow_a_garden")
-          .setLabel(`${isSell ? "Sell" : "Buy"} Grow a Garden`)
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId(isSell ? "sell_bladeball" : "buy_bladeball")
-          .setLabel(`${isSell ? "Sell" : "Buy"} Bladeball`)
-          .setStyle(ButtonStyle.Primary),
+        new StringSelectMenuBuilder()
+          .setCustomId(isSell ? "sell_menu" : "buy_menu")
+          .setPlaceholder(`Select a game to ${isSell ? "sell" : "buy"}`)
+          .addOptions(
+            {
+              label: `${isSell ? "Sell" : "Buy"} Da Hood`,
+              value: isSell ? "sell_da_hood" : "buy_da_hood",
+            },
+            {
+              label: `${isSell ? "Sell" : "Buy"} Grow a Garden`,
+              value: isSell ? "sell_grow_a_garden" : "buy_grow_a_garden",
+            },
+            {
+              label: `${isSell ? "Sell" : "Buy"} Bladeball`,
+              value: isSell ? "sell_bladeball" : "buy_bladeball",
+            }
+          )
       );
 
       await interaction.reply({ content: "✅ Panel sent!", ephemeral: true });
@@ -61,9 +67,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
 
-  // Handle button interactions
-  if (interaction.isButton()) {
-    const [action, ...itemParts] = interaction.customId.split("_"); // "buy", "da", "hood"
+  // Dropdown handler
+  if (interaction.isStringSelectMenu()) {
+    const [action, ...itemParts] = interaction.values[0].split("_");
     const itemName = itemParts.join(" ");
 
     const modal = new ModalBuilder()
@@ -97,7 +103,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.showModal(modal);
   }
 
-  // Handle modal submission
+  // Modal submission
   if (interaction.isModalSubmit()) {
     const [action] = interaction.customId.split("_"); // "buy" or "sell"
     const item = interaction.fields.getTextInputValue("item");
@@ -135,7 +141,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const buttons = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId("close_ticket").setLabel("Close Ticket").setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId("transcript_ticket").setLabel("Save Transcript").setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("delete_ticket").setLabel("Delete Ticket").setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId("delete_ticket").setLabel("Delete Ticket").setStyle(ButtonStyle.Danger)
     );
 
     await ticketChannel.send({
