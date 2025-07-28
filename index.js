@@ -15,7 +15,6 @@ const {
   Events,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
-  AttachmentBuilder,
 } = require("discord.js");
 
 const client = new Client({
@@ -39,23 +38,51 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const isSell = interaction.commandName === "sendpanel2";
 
       const embed = new EmbedBuilder()
-        .setTitle(`${isSell ? "📤 Sell" : "🛒 Buy"} Panel`)
-        .setDescription("Choose an item from the dropdown below.")
-        .setColor(isSell ? 0xff3c3c : 0x00ffab)
-        .setImage("https://cdn.discordapp.com/attachments/1391658230543028315/1391658281243508746/standard_8.gif");
+        .setTitle(`${isSell ? "📤 Sell Panel" : "🛒 Buy Panel"}`)
+        .setDescription(
+          `${isSell ? "Choose an item to sell from the dropdown below.\n\n**⚠️ I am not buying Grow A Garden Pets**" : "Choose an item to buy from the dropdown below."}`
+        )
+        .setColor(isSell ? 0xff0000 : 0x00ff00)
+        .setThumbnail("https://cdn.discordapp.com/attachments/1391658230543028315/1391658281243508746/standard_8.gif");
 
       const menu = new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
-          .setCustomId(isSell ? "sell_menu" : "buy_menu")
-          .setPlaceholder(`Select an item to ${isSell ? "sell" : "buy"}`)
-          .addOptions([
-            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Da Hood`).setValue(`${isSell ? "sell" : "buy"}_da_hood`).setEmoji("<:DaHood:1321934745889669183>"),
-            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Grow a Garden`).setValue(`${isSell ? "sell" : "buy"}_grow_a_garden`).setEmoji("<:GAG:1397616856621256896>"),
-            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Bladeball`).setValue(`${isSell ? "sell" : "buy"}_bladeball`).setEmoji("<:Bladeball:1289341370653479005>"),
-            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Robux`).setValue(`${isSell ? "sell" : "buy"}_robux`).setEmoji("<:Robux:1328601212123349053>"),
-            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Adopt Me`).setValue(`${isSell ? "sell" : "buy"}_adopt_me`).setEmoji("<:adoptme:1394233121519439902>"),
-            new StringSelectMenuOptionBuilder().setLabel(`${isSell ? "Sell" : "Buy"} Limiteds`).setValue(`${isSell ? "sell" : "buy"}_limiteds`).setEmoji("<:limiteds:1347882355653742612>")
-          ])
+          .setCustomId(isSell ? "sell_select" : "buy_select")
+          .setPlaceholder(isSell ? "Select an item to sell" : "Select an item to buy")
+          .addOptions(
+            [
+              {
+                label: `${isSell ? "Sell" : "Buy"} Da Hood`,
+                value: `${isSell ? "sell" : "buy"}_da_hood`,
+                emoji: { id: "1321934745889669183" },
+              },
+              !isSell && {
+                label: `${isSell ? "Sell" : "Buy"} Grow a Garden`,
+                value: `${isSell ? "sell" : "buy"}_grow_a_garden`,
+                emoji: { id: "1397616856621256896" },
+              },
+              {
+                label: `${isSell ? "Sell" : "Buy"} Bladeball`,
+                value: `${isSell ? "sell" : "buy"}_bladeball`,
+                emoji: { id: "1289341370653479005" },
+              },
+              {
+                label: `${isSell ? "Sell" : "Buy"} Robux`,
+                value: `${isSell ? "sell" : "buy"}_robux`,
+                emoji: { id: "1328601212123349053" },
+              },
+              {
+                label: `${isSell ? "Sell" : "Buy"} Adopt Me`,
+                value: `${isSell ? "sell" : "buy"}_adopt_me`,
+                emoji: { id: "1394233121519439902" },
+              },
+              {
+                label: `${isSell ? "Sell" : "Buy"} Limiteds`,
+                value: `${isSell ? "sell" : "buy"}_limiteds`,
+                emoji: { id: "1347882355653742612" },
+              },
+            ].filter(Boolean)
+          )
       );
 
       await interaction.reply({ content: "✅ Panel sent!", ephemeral: true });
@@ -63,7 +90,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
 
-  // Handle dropdown selection
   if (interaction.isStringSelectMenu()) {
     const [action, ...itemParts] = interaction.values[0].split("_");
     const itemName = itemParts.join(" ");
@@ -90,16 +116,15 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(itemInput),
-      new ActionRowBuilder().addComponents(paymentInput),
-      new ActionRowBuilder().addComponents(usernameInput)
-    );
+    const row1 = new ActionRowBuilder().addComponents(itemInput);
+    const row2 = new ActionRowBuilder().addComponents(paymentInput);
+    const row3 = new ActionRowBuilder().addComponents(usernameInput);
+
+    modal.addComponents(row1, row2, row3);
 
     await interaction.showModal(modal);
   }
 
-  // Handle modal submission
   if (interaction.isModalSubmit()) {
     const [action] = interaction.customId.split("_");
     const item = interaction.fields.getTextInputValue("item");
@@ -131,7 +156,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
     const embed = new EmbedBuilder()
       .setTitle(`🎫 New ${action.toUpperCase()} Ticket`)
       .setDescription(`**Item(s):** ${item}\n**Payment Method:** ${payment}\n**Roblox Username:** ${username}`)
-      .setColor(action === "buy" ? 0x00ffab : 0xff3c3c)
+      .setColor(action === "buy" ? 0x00ff00 : 0xff0000)
       .setFooter({ text: `User: ${user.tag}`, iconURL: user.displayAvatarURL() });
 
     const buttons = new ActionRowBuilder().addComponents(
@@ -152,31 +177,26 @@ client.on(Events.InteractionCreate, async (interaction) => {
     });
   }
 
-  // Handle button functions
   if (interaction.isButton()) {
-    const { customId } = interaction;
     const channel = interaction.channel;
 
-    if (customId === "close_ticket") {
-      await channel.permissionOverwrites.edit(interaction.user.id, { SendMessages: false });
-      await interaction.reply({ content: "🔒 Ticket closed.", ephemeral: true });
-    }
-
-    if (customId === "delete_ticket") {
-      await interaction.reply({ content: "🗑️ Ticket will be deleted in 5 seconds.", ephemeral: true });
-      setTimeout(() => channel.delete(), 5000);
-    }
-
-    if (customId === "transcript_ticket") {
-      const messages = await channel.messages.fetch({ limit: 100 });
-      const transcript = messages.reverse().map(m => `${m.author.tag}: ${m.content}`).join("\n");
-      const file = new AttachmentBuilder(Buffer.from(transcript), { name: `transcript-${channel.name}.txt` });
-
-      await interaction.reply({
-        content: "📄 Transcript saved.",
-        files: [file],
-        ephemeral: true
+    if (interaction.customId === "close_ticket") {
+      await channel.send("🔒 Ticket closed.");
+      await channel.permissionOverwrites.edit(interaction.user.id, {
+        SendMessages: false,
       });
+      await interaction.reply({ content: "✅ Ticket closed.", ephemeral: true });
+    }
+
+    if (interaction.customId === "transcript_ticket") {
+      await interaction.reply({ content: "📜 Transcript saved (mock).", ephemeral: true });
+    }
+
+    if (interaction.customId === "delete_ticket") {
+      await interaction.reply({ content: "🗑️ Ticket will be deleted in 5 seconds.", ephemeral: true });
+      setTimeout(() => {
+        channel.delete().catch(console.error);
+      }, 5000);
     }
   }
 });
