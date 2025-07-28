@@ -1,90 +1,154 @@
-// Handle button interactions
-if (interaction.isButton()) {
-  const customId = interaction.customId;
-  const action = customId.startsWith("buy") ? "buy" : "sell";
-  const itemName = customId.replace(`${action}_`, "").replaceAll("_", " ");
+require("dotenv").config();
+const {
+  Client,
+  GatewayIntentBits,
+  Partials,
+  ChannelType,
+  PermissionsBitField,
+  EmbedBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ActionRowBuilder,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  Events,
+} = require("discord.js");
 
-  const modal = new ModalBuilder()
-    .setCustomId(`${action}_modal_${customId.replace(`${action}_`, "")}`)
-    .setTitle(`${action === "buy" ? "Buy" : "Sell"} Request - ${itemName}`);
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
+  partials: [Partials.Channel],
+});
 
-  const itemInput = new TextInputBuilder()
-    .setCustomId("item")
-    .setLabel("Item(s)")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
+const STAFF_ROLE_ID = "YOUR_STAFF_ROLE_ID"; // replace with your actual staff role ID
 
-  const paymentInput = new TextInputBuilder()
-    .setCustomId("payment")
-    .setLabel("Payment Method")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
+client.once(Events.ClientReady, () => {
+  console.log(`✅ Logged in as ${client.user.tag}`);
+});
 
-  const usernameInput = new TextInputBuilder()
-    .setCustomId("username")
-    .setLabel("Roblox Username")
-    .setStyle(TextInputStyle.Short)
-    .setRequired(true);
+// Handle slash commands
+client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isChatInputCommand()) {
+    if (interaction.commandName === "sendpanel" || interaction.commandName === "sendpanel2") {
+      const isSell = interaction.commandName === "sendpanel2";
 
-  const row1 = new ActionRowBuilder().addComponents(itemInput);
-  const row2 = new ActionRowBuilder().addComponents(paymentInput);
-  const row3 = new ActionRowBuilder().addComponents(usernameInput);
+      const embed = new EmbedBuilder()
+        .setTitle(`${isSell ? "📤 Sell" : "🛒 Buy"} Panel`)
+        .setDescription("Choose an item from the dropdown below.")
+        .setColor(isSell ? "Red" : "Green");
 
-  modal.addComponents(row1, row2, row3);
+      const menu = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(isSell ? "sell_da_hood" : "buy_da_hood")
+          .setLabel(`${isSell ? "Sell" : "Buy"} Da Hood`)
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(isSell ? "sell_grow_a_garden" : "buy_grow_a_garden")
+          .setLabel(`${isSell ? "Sell" : "Buy"} Grow a Garden`)
+          .setStyle(ButtonStyle.Primary),
+        new ButtonBuilder()
+          .setCustomId(isSell ? "sell_bladeball" : "buy_bladeball")
+          .setLabel(`${isSell ? "Sell" : "Buy"} Bladeball`)
+          .setStyle(ButtonStyle.Primary),
+      );
 
-  await interaction.showModal(modal);
-}
+      await interaction.reply({ content: "✅ Panel sent!", ephemeral: true });
+      await interaction.channel.send({ embeds: [embed], components: [menu] });
+    }
+  }
 
-// Handle modal submission
-if (interaction.isModalSubmit()) {
-  const action = interaction.customId.startsWith("buy") ? "buy" : "sell";
+  // Handle button interactions
+  if (interaction.isButton()) {
+    const [action, ...itemParts] = interaction.customId.split("_"); // "buy", "da", "hood"
+    const itemName = itemParts.join(" ");
 
-  const item = interaction.fields.getTextInputValue("item");
-  const payment = interaction.fields.getTextInputValue("payment");
-  const username = interaction.fields.getTextInputValue("username");
+    const modal = new ModalBuilder()
+      .setCustomId(`${action}_${itemParts.join("_")}_modal`)
+      .setTitle(`${action === "buy" ? "Buy" : "Sell"} Request - ${itemName}`);
 
-  const user = interaction.user;
-  const guild = interaction.guild;
+    const itemInput = new TextInputBuilder()
+      .setCustomId("item")
+      .setLabel("Item(s)")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
 
-  const ticketChannel = await guild.channels.create({
-    name: `ticket-${user.username}`,
-    type: ChannelType.GuildText,
-    permissionOverwrites: [
-      {
-        id: guild.roles.everyone,
-        deny: [PermissionsBitField.Flags.ViewChannel],
-      },
-      {
-        id: user.id,
-        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-      },
-      {
-        id: STAFF_ROLE_ID,
-        allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
-      },
-    ],
-  });
+    const paymentInput = new TextInputBuilder()
+      .setCustomId("payment")
+      .setLabel("Payment Method")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
 
-  const embed = new EmbedBuilder()
-    .setTitle(`🎫 New ${action.toUpperCase()} Ticket`)
-    .setDescription(`**Item(s):** ${item}\n**Payment Method:** ${payment}\n**Roblox Username:** ${username}`)
-    .setColor(action === "buy" ? "Green" : "Red")
-    .setFooter({ text: `User: ${user.tag}`, iconURL: user.displayAvatarURL() });
+    const usernameInput = new TextInputBuilder()
+      .setCustomId("username")
+      .setLabel("Roblox Username")
+      .setStyle(TextInputStyle.Short)
+      .setRequired(true);
 
-  const buttons = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId("close_ticket").setLabel("Close Ticket").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId("transcript_ticket").setLabel("Save Transcript").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId("delete_ticket").setLabel("Delete Ticket").setStyle(ButtonStyle.Danger),
-  );
+    const row1 = new ActionRowBuilder().addComponents(itemInput);
+    const row2 = new ActionRowBuilder().addComponents(paymentInput);
+    const row3 = new ActionRowBuilder().addComponents(usernameInput);
 
-  await ticketChannel.send({
-    content: `<@${user.id}> <@&${STAFF_ROLE_ID}>`,
-    embeds: [embed],
-    components: [buttons],
-  });
+    modal.addComponents(row1, row2, row3);
 
-  await interaction.reply({
-    content: `✅ Ticket created: ${ticketChannel}`,
-    ephemeral: true,
-  });
-}
+    await interaction.showModal(modal);
+  }
+
+  // Handle modal submission
+  if (interaction.isModalSubmit()) {
+    const [action] = interaction.customId.split("_"); // "buy" or "sell"
+    const item = interaction.fields.getTextInputValue("item");
+    const payment = interaction.fields.getTextInputValue("payment");
+    const username = interaction.fields.getTextInputValue("username");
+
+    const user = interaction.user;
+    const guild = interaction.guild;
+
+    const ticketChannel = await guild.channels.create({
+      name: `ticket-${user.username}`,
+      type: ChannelType.GuildText,
+      permissionOverwrites: [
+        {
+          id: guild.roles.everyone,
+          deny: [PermissionsBitField.Flags.ViewChannel],
+        },
+        {
+          id: user.id,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+        },
+        {
+          id: STAFF_ROLE_ID,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+        },
+      ],
+    });
+
+    const embed = new EmbedBuilder()
+      .setTitle(`🎫 New ${action.toUpperCase()} Ticket`)
+      .setDescription(`**Item(s):** ${item}\n**Payment Method:** ${payment}\n**Roblox Username:** ${username}`)
+      .setColor(action === "buy" ? "Green" : "Red")
+      .setFooter({ text: `User: ${user.tag}`, iconURL: user.displayAvatarURL() });
+
+    const buttons = new ActionRowBuilder().addComponents(
+      new ButtonBuilder().setCustomId("close_ticket").setLabel("Close Ticket").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("transcript_ticket").setLabel("Save Transcript").setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder().setCustomId("delete_ticket").setLabel("Delete Ticket").setStyle(ButtonStyle.Danger),
+    );
+
+    await ticketChannel.send({
+      content: `<@${user.id}> <@&${STAFF_ROLE_ID}>`,
+      embeds: [embed],
+      components: [buttons],
+    });
+
+    await interaction.reply({
+      content: `✅ Ticket created: ${ticketChannel}`,
+      ephemeral: true,
+    });
+  }
+});
+
+client.login(process.env.TOKEN);
