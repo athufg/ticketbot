@@ -25,40 +25,9 @@ const client = new Client({
 });
 
 const STAFF_ROLE_ID = "1332256090993463306"; // replace with your actual staff role ID
-const EMBED_IMAGE = "https://cdn.discordapp.com/attachments/1391658230543028315/1391658281243508746/standard_8.gif?ex=688861c6&is=68871046&hm=f4b6efe814022c6481e7a0f5343e4404011562b871db614f219b2f3fffe35326&";
 
 client.once(Events.ClientReady, () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
-});
-
-client.on(Events.MessageCreate, async (message) => {
-  if (!message.guild || message.author.bot) return;
-
-  const args = message.content.trim().split(/ +/);
-  const command = args.shift()?.toLowerCase();
-
-  if (command === "$add") {
-    const userId = args[0];
-    const user = await message.guild.members.fetch(userId).catch(() => null);
-    if (!user) return message.reply("❌ Invalid user ID.");
-
-    await message.channel.permissionOverwrites.edit(user.id, {
-      ViewChannel: true,
-      SendMessages: true,
-    });
-    return message.reply(`✅ Added <@${user.id}> to this ticket.`);
-  }
-
-  if (command === "$remove") {
-    const userId = args[0];
-    const user = await message.guild.members.fetch(userId).catch(() => null);
-    if (!user) return message.reply("❌ Invalid user ID.");
-
-    await message.channel.permissionOverwrites.edit(user.id, {
-      ViewChannel: false,
-    });
-    return message.reply(`❌ Removed <@${user.id}> from this ticket.`);
-  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
@@ -69,55 +38,61 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const embed = new EmbedBuilder()
         .setTitle(`${isSell ? "📤 Sell" : "🛒 Buy"} Panel`)
         .setDescription(
-          `${isSell ? "I am not buying Grow A Garden Pets\n" : ""}Choose an item from the dropdown below.`
+          `${isSell ? "I am not buying Grow A Garden Pets\n\n" : ""}Choose an item from the dropdown below.`
         )
-        .setColor(isSell ? 0xff5555 : 0x55ff55)
-        .setThumbnail(EMBED_IMAGE);
+        .setColor(isSell ? 0xff3c3c : 0x3cff70)
+        .setThumbnail("https://cdn.discordapp.com/attachments/1391658230543028315/1391658281243508746/standard_8.gif");
 
-      const menu = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(isSell ? "sell_da_hood" : "buy_da_hood")
-          .setLabel(`${isSell ? "Sell" : "Buy"} Da Hood`)
-          .setEmoji("<:DaHood:1321934745889669183>")
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId(isSell ? "sell_bladeball" : "buy_bladeball")
-          .setLabel(`${isSell ? "Sell" : "Buy"} Bladeball`)
-          .setEmoji("<:Bladeball:1289341370653479005>")
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId(isSell ? "sell_robux" : "buy_robux")
-          .setLabel(`${isSell ? "Sell" : "Buy"} Robux`)
-          .setEmoji("<:Robux:1328601212123349053>")
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId(isSell ? "sell_limiteds" : "buy_limiteds")
-          .setLabel(`${isSell ? "Sell" : "Buy"} Limiteds`)
-          .setEmoji("<:limiteds:1347882355653742612>")
-          .setStyle(ButtonStyle.Primary),
-        ...(!isSell
-          ? [
-              new ButtonBuilder()
-                .setCustomId("buy_grow_a_garden")
-                .setLabel("Buy Grow a Garden")
-                .setEmoji("<:GAG:1397616856621256896>")
-                .setStyle(ButtonStyle.Primary),
-              new ButtonBuilder()
-                .setCustomId("buy_adopt_me")
-                .setLabel("Buy Adopt Me")
-                .setEmoji("<:adoptme:1394233121519439902>")
-                .setStyle(ButtonStyle.Primary),
-            ]
-          : [])
+      const options = [
+        {
+          label: `${isSell ? "Sell" : "Buy"} Da Hood`,
+          value: `${isSell ? "sell" : "buy"}_da_hood`,
+          emoji: "<:DaHood:1321934745889669183>"
+        },
+        {
+          label: `${isSell ? "Sell" : "Buy"} Blade Ball`,
+          value: `${isSell ? "sell" : "buy"}_bladeball`,
+          emoji: "<:Bladeball:1289341370653479005>"
+        },
+        {
+          label: `${isSell ? "Sell" : "Buy"} Robux`,
+          value: `${isSell ? "sell" : "buy"}_robux`,
+          emoji: "<:Robux:1328601212123349053>"
+        },
+        {
+          label: `${isSell ? "Sell" : "Buy"} Adopt Me`,
+          value: `${isSell ? "sell" : "buy"}_adopt_me`,
+          emoji: "<:adoptme:1394233121519439902>"
+        },
+        {
+          label: `${isSell ? "Sell" : "Buy"} Limiteds`,
+          value: `${isSell ? "sell" : "buy"}_limiteds`,
+          emoji: "<:limiteds:1347882355653742612>"
+        },
+      ];
+
+      if (!isSell) {
+        options.splice(1, 0, {
+          label: "Buy Grow a Garden",
+          value: "buy_grow_a_garden",
+          emoji: "<:GAG:1397616856621256896>"
+        });
+      }
+
+      const select = new ActionRowBuilder().addComponents(
+        new (require("discord.js")).StringSelectMenuBuilder()
+          .setCustomId("select_game")
+          .setPlaceholder("Choose a game")
+          .addOptions(options)
       );
 
-      await interaction.reply({ content: "✅ Panel sent!", flags: 64 });
-      await interaction.channel.send({ embeds: [embed], components: [menu] });
+      await interaction.reply({ content: "✅ Panel sent!", ephemeral: true });
+      await interaction.channel.send({ embeds: [embed], components: [select] });
     }
   }
 
-  if (interaction.isButton()) {
-    const [action, ...itemParts] = interaction.customId.split("_");
+  if (interaction.isStringSelectMenu()) {
+    const [action, ...itemParts] = interaction.values[0].split("_");
     const itemName = itemParts.join(" ");
 
     const modal = new ModalBuilder()
@@ -142,11 +117,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
       .setStyle(TextInputStyle.Short)
       .setRequired(true);
 
-    modal.addComponents(
-      new ActionRowBuilder().addComponents(itemInput),
-      new ActionRowBuilder().addComponents(paymentInput),
-      new ActionRowBuilder().addComponents(usernameInput)
-    );
+    const row1 = new ActionRowBuilder().addComponents(itemInput);
+    const row2 = new ActionRowBuilder().addComponents(paymentInput);
+    const row3 = new ActionRowBuilder().addComponents(usernameInput);
+
+    modal.addComponents(row1, row2, row3);
 
     await interaction.showModal(modal);
   }
@@ -164,23 +139,31 @@ client.on(Events.InteractionCreate, async (interaction) => {
       name: `ticket-${user.username}`,
       type: ChannelType.GuildText,
       permissionOverwrites: [
-        { id: guild.roles.everyone, deny: [PermissionsBitField.Flags.ViewChannel] },
-        { id: user.id, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
-        { id: STAFF_ROLE_ID, allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages] },
+        {
+          id: guild.roles.everyone,
+          deny: [PermissionsBitField.Flags.ViewChannel],
+        },
+        {
+          id: user.id,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+        },
+        {
+          id: STAFF_ROLE_ID,
+          allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages],
+        },
       ],
     });
 
     const embed = new EmbedBuilder()
       .setTitle(`🎫 New ${action.toUpperCase()} Ticket`)
       .setDescription(`**Item(s):** ${item}\n**Payment Method:** ${payment}\n**Roblox Username:** ${username}`)
-      .setColor(action === "buy" ? 0x55ff55 : 0xff5555)
-      .setThumbnail(EMBED_IMAGE)
+      .setColor(action === "buy" ? 0x3cff70 : 0xff3c3c)
       .setFooter({ text: `User: ${user.tag}`, iconURL: user.displayAvatarURL() });
 
     const buttons = new ActionRowBuilder().addComponents(
       new ButtonBuilder().setCustomId("close_ticket").setLabel("Close Ticket").setStyle(ButtonStyle.Secondary),
       new ButtonBuilder().setCustomId("transcript_ticket").setLabel("Save Transcript").setStyle(ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("delete_ticket").setLabel("Delete Ticket").setStyle(ButtonStyle.Danger)
+      new ButtonBuilder().setCustomId("delete_ticket").setLabel("Delete Ticket").setStyle(ButtonStyle.Danger),
     );
 
     await ticketChannel.send({
@@ -191,23 +174,61 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     await interaction.reply({
       content: `✅ Ticket created: ${ticketChannel}`,
-      flags: 64,
+      ephemeral: true,
     });
   }
 
   if (interaction.isButton()) {
-    const { customId, channel } = interaction;
+    const channel = interaction.channel;
+    if (!channel.name.startsWith("ticket-")) return;
 
-    if (customId === "close_ticket") {
-      await channel.send("🔒 This ticket is now closed.");
-    } else if (customId === "transcript_ticket") {
-      await channel.send("📄 Transcript saved (placeholder). Work in progress.");
-    } else if (customId === "delete_ticket") {
-      await channel.send("⛔ Deleting this ticket in 3 seconds...");
-      setTimeout(() => {
-        channel.delete().catch(() => null);
-      }, 3000);
+    if (interaction.customId === "close_ticket") {
+      await interaction.reply({ content: "🔒 Ticket closed.", ephemeral: true });
+      await channel.permissionOverwrites.edit(interaction.user.id, { SendMessages: false });
     }
+
+    if (interaction.customId === "transcript_ticket") {
+      await interaction.reply({ content: "📄 Transcript saved (not implemented).", ephemeral: true });
+      // Add actual transcript logic here if needed
+    }
+
+    if (interaction.customId === "delete_ticket") {
+      await interaction.reply({ content: "🗑️ Ticket will be deleted in 5 seconds.", ephemeral: true });
+      setTimeout(() => channel.delete(), 5000);
+    }
+  }
+});
+
+client.on("messageCreate", async (message) => {
+  if (message.author.bot || !message.content.startsWith("$")) return;
+
+  const [command, arg] = message.content.trim().split(/\s+/);
+  const ticketPrefix = "ticket-";
+
+  if (!message.channel.name || !message.channel.name.startsWith(ticketPrefix)) {
+    return message.reply("❌ You can only use this command inside a ticket channel.");
+  }
+
+  if (!arg || !/^\d{17,19}$/.test(arg)) {
+    return message.reply("❌ Please provide a valid user ID.");
+  }
+
+  const userId = arg;
+
+  if (command === "$add") {
+    await message.channel.permissionOverwrites.edit(userId, {
+      ViewChannel: true,
+      SendMessages: true,
+      ReadMessageHistory: true,
+    });
+    return message.reply(`✅ <@${userId}> has been added to this ticket.`);
+  }
+
+  if (command === "$remove") {
+    await message.channel.permissionOverwrites.edit(userId, {
+      ViewChannel: false,
+    });
+    return message.reply(`✅ <@${userId}> has been removed from this ticket.`);
   }
 });
 
