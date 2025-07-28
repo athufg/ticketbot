@@ -12,9 +12,8 @@ const {
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
-  Events,
   StringSelectMenuBuilder,
-  StringSelectMenuOptionBuilder,
+  Events,
 } = require("discord.js");
 
 const client = new Client({
@@ -32,7 +31,6 @@ client.once(Events.ClientReady, () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
 });
 
-// Handle slash commands
 client.on(Events.InteractionCreate, async (interaction) => {
   if (interaction.isChatInputCommand()) {
     if (interaction.commandName === "sendpanel" || interaction.commandName === "sendpanel2") {
@@ -40,21 +38,46 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
       const embed = new EmbedBuilder()
         .setTitle(`${isSell ? "📤 Sell" : "🛒 Buy"} Panel`)
-        .setDescription("Choose an item from the dropdown below.")
-        .setColor("#ED75DC")
-        .setImage("https://cdn.discordapp.com/attachments/1391658230543028315/1391658281243508746/standard_8.gif?ex=688861c6&is=68871046&hm=f4b6efe814022c6481e7a0f5343e4404011562b871db614f219b2f3fffe35326&");
+        .setDescription("Select an item below to proceed.")
+        .setColor("#2F3136")
+        .setImage("https://cdn.discordapp.com/attachments/1391658230543028315/1391658281243508746/standard_8.gif")
+        .setFooter({ text: "Please make a selection to create a ticket." });
 
       const menu = new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
           .setCustomId(isSell ? "sell_menu" : "buy_menu")
           .setPlaceholder(`Select an item to ${isSell ? "sell" : "buy"}`)
           .addOptions(
-            new StringSelectMenuOptionBuilder().setLabel("Da Hood").setValue(`${isSell ? "sell" : "buy"}_da_hood`).setEmoji("🧨"),
-            new StringSelectMenuOptionBuilder().setLabel("Grow a Garden").setValue(`${isSell ? "sell" : "buy"}_grow_a_garden`).setEmoji("🌱"),
-            new StringSelectMenuOptionBuilder().setLabel("Bladeball").setValue(`${isSell ? "sell" : "buy"}_bladeball`).setEmoji("⚔️"),
-            new StringSelectMenuOptionBuilder().setLabel("Robux").setValue(`${isSell ? "sell" : "buy"}_robux`).setEmoji("💸"),
-            new StringSelectMenuOptionBuilder().setLabel("Adopt Me").setValue(`${isSell ? "sell" : "buy"}_adopt_me`).setEmoji("🍼"),
-            new StringSelectMenuOptionBuilder().setLabel("Limiteds").setValue(`${isSell ? "sell" : "buy"}_limiteds`).setEmoji("💎")
+            {
+              label: `${isSell ? "Sell" : "Buy"} Da Hood`,
+              value: `${isSell ? "sell_da_hood" : "buy_da_hood"}`,
+              emoji: { name: "DaHood", id: "1321934745889669183" },
+            },
+            {
+              label: `${isSell ? "Sell" : "Buy"} Grow a Garden`,
+              value: `${isSell ? "sell_grow_a_garden" : "buy_grow_a_garden"}`,
+              emoji: "🌱",
+            },
+            {
+              label: `${isSell ? "Sell" : "Buy"} Bladeball`,
+              value: `${isSell ? "sell_bladeball" : "buy_bladeball"}`,
+              emoji: { name: "Bladeball", id: "1289341370653479005" },
+            },
+            {
+              label: `${isSell ? "Sell" : "Buy"} Robux`,
+              value: `${isSell ? "sell_robux" : "buy_robux"}`,
+              emoji: { name: "Robux", id: "1328601212123349053" },
+            },
+            {
+              label: `${isSell ? "Sell" : "Buy"} Adopt Me`,
+              value: `${isSell ? "sell_adopt_me" : "buy_adopt_me"}`,
+              emoji: { name: "adoptme", id: "1394233121519439902" },
+            },
+            {
+              label: `${isSell ? "Sell" : "Buy"} Limiteds`,
+              value: `${isSell ? "sell_limiteds" : "buy_limiteds"}`,
+              emoji: { name: "limiteds", id: "1347882355653742612" },
+            }
           )
       );
 
@@ -63,7 +86,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     }
   }
 
-  // Handle select menu interactions
   if (interaction.isStringSelectMenu()) {
     const [action, ...itemParts] = interaction.values[0].split("_");
     const itemName = itemParts.join(" ");
@@ -99,9 +121,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.showModal(modal);
   }
 
-  // Handle modal submission
   if (interaction.isModalSubmit()) {
-    const [action] = interaction.customId.split("_"); // "buy" or "sell"
+    const [action] = interaction.customId.split("_");
     const item = interaction.fields.getTextInputValue("item");
     const payment = interaction.fields.getTextInputValue("payment");
     const username = interaction.fields.getTextInputValue("username");
@@ -150,20 +171,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
       content: `✅ Ticket created: ${ticketChannel}`,
       ephemeral: true,
     });
-  }
-
-  // Handle ticket button actions
-  if (interaction.isButton()) {
-    const channel = interaction.channel;
-    if (interaction.customId === "close_ticket") {
-      await channel.permissionOverwrites.edit(interaction.user.id, { SendMessages: false });
-      await interaction.reply({ content: "🔒 Ticket closed.", ephemeral: true });
-    } else if (interaction.customId === "delete_ticket") {
-      await interaction.reply({ content: "🗑️ Deleting ticket in 5 seconds...", ephemeral: true });
-      setTimeout(() => channel.delete().catch(() => {}), 5000);
-    } else if (interaction.customId === "transcript_ticket") {
-      await interaction.reply({ content: "📄 Transcript saved! (Feature coming soon)", ephemeral: true });
-    }
   }
 });
 
