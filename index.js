@@ -26,6 +26,7 @@ const client = new Client({
 });
 
 const STAFF_ROLE_ID = "1332256090993463306"; // replace with your actual staff role ID
+const PANEL_IMAGE_URL = "https://cdn.discordapp.com/attachments/1391658230543028315/1391658281243508746/standard_8.gif?ex=688861c6&is=68871046&hm=f4b6efe814022c6481e7a0f5343e4404011562b871db614f219b2f3fffe35326&"; // <-- Use your previous image or replace with a new one
 
 client.once(Events.ClientReady, () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
@@ -40,7 +41,8 @@ client.on(Events.InteractionCreate, async (interaction) => {
       const embed = new EmbedBuilder()
         .setTitle(`${isSell ? "📤 Sell" : "🛒 Buy"} Panel`)
         .setDescription("Select a game from the dropdown below to open a ticket.")
-        .setColor(isSell ? "Red" : "Green");
+        .setColor(isSell ? "Red" : "Green")
+        .setThumbnail(PANEL_IMAGE_URL); // ✅ Adds image to the side
 
       const menu = new ActionRowBuilder().addComponents(
         new StringSelectMenuBuilder()
